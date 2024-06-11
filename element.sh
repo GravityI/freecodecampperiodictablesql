@@ -15,7 +15,7 @@ IDENTIFY_ELEMENT ()
       then
         echo "I could not find that element in the database."
       else
-        echo "The element's atomic number is $1"
+        GET_ELEMENT 'NUMBER' $1
       fi
     else
       #check if input is a valid name
@@ -28,10 +28,10 @@ IDENTIFY_ELEMENT ()
         then
           echo "I could not find that element in the database."
         else
-          echo "The element's symbol is $1"
+          GET_ELEMENT 'SYMBOL' $1
         fi
       else
-        echo "The element's name is $1"
+        GET_ELEMENT 'NAME' $1
       fi
     fi
   else
@@ -42,7 +42,25 @@ IDENTIFY_ELEMENT ()
 GET_ELEMENT ()
 {
   #boilerplate for correct output
-  echo "$1"
+  case $1 in
+  'NUMBER')
+    NAME=$($PSQL "SELECT name FROM elements WHERE atomic_number = $2")
+    SYMBOL=$($PSQL "SELECT symbol FROM elements WHERE atomic_number = $2")
+  ;;
+  'NAME')
+    ATOMIC_NUMBER=$($PSQL "SELECT atomic_number FROM elements WHERE name = '$2'")
+    SYMBOL=$($PSQL "SELECT symbol FROM elements WHERE name = '$2'")
+  ;;
+  'SYMBOL')
+    ATOMIC_NUMBER=$($PSQL "SELECT atomic_number FROM elements WHERE symbol = '$2'")
+    NAME=$($PSQL "SELECT name FROM elements WHERE symbol = '$2'")
+  ;;
+  esac
+  TYPE=$($PSQL "SELECT type FROM properties WHERE atomic_number = $ATOMIC_NUMBER")
+  ATOMIC_MASS=$($PSQL "SELECT atomic_mass FROM properties WHERE atomic_number = $ATOMIC_NUMBER")
+  MELTING_POINT=$($PSQL "SELECT melting_point_celsius FROM properties WHERE atomic_number = $ATOMIC_NUMBER")
+  BOILING_POINT=$($PSQL "SELECT boiling_point_celsius FROM properties WHERE atomic_number = $ATOMIC_NUMBER")
+  echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $ATOMIC_MASS amu. $NAME has a melting point of $MELTING_POINT celsius and a boiling point of $BOILING_POINT celsius."
 }
 
 IDENTIFY_ELEMENT $1
